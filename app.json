@@ -38,7 +38,8 @@
         "react-native-vision-camera",
         {
           "cameraPermissionText": "Precisamos da sua permissão para usar a câmera.",
-          "microphonePermissionText": "Precisamos da sua permissão para usar o microfone."
+          "microphonePermissionText": "Precisamos da sua permissão para usar o microfone.",
+          "enableFrameProcessors": true
         }
       ]
     ],
