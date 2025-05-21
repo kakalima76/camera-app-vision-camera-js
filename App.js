@@ -56,9 +56,9 @@ export default function App() {
   let cameraDevice = null;
 
   if (Array.isArray(devices) && devices.length > 1) {
-    cameraDevice = devices.find((device) => device.position === "back");
-  } else if (devices && devices.back) {
-    cameraDevice = devices.back;
+    cameraDevice = devices.find((device) => device.position === "front");
+  } else if (devices && devices.front) {
+    cameraDevice = devices.front;
   }
 
   // Define a função para atualizar o estado no thread da UI
