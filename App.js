@@ -1,118 +1,136 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
-import {
-  StyleSheet,
-  View,
-  Text,
-  Linking,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
-// Certifique-se de que 'runOnJS' está importado de 'react-native-reanimated'
-// A VisionCamera usa Reanimated para os worklets.
-// Se você não tem react-native-reanimated instalado, precisará instalá-lo:
-// yarn add react-native-reanimated
-// E adicionar 'react-native-reanimated/plugin' ao seu babel.config.js
+import "react-native-reanimated";
+import { StyleSheet, Text, View } from "react-native";
+import { useEffect, useState, useRef, useCallback } from "react"; // Importe useCallback
 import {
   Camera,
-  useCameraDevices,
+  useCameraDevice,
   useFrameProcessor,
+  // runAsync, // runAsync não é necessário aqui
 } from "react-native-vision-camera";
-import { runOnJS } from "react-native-reanimated"; // Importe runOnJS
-import "react-native-reanimated";
+import { useFaceDetector } from "react-native-vision-camera-face-detector";
+import { Worklets } from "react-native-worklets-core";
 
 export default function App() {
-  const cameraRef = useRef(null);
-  const devices = useCameraDevices();
-  const [cameraPermissionStatus, setCameraPermissionStatus] =
-    useState("not-determined");
-  const [frameInfo, setFrameInfo] = useState(null); // Estado para armazenar as informações do frame
+  // Opções de detecção facial. Você pode adicionar mais opções aqui, como:
+  // minFaceSize: 0.1, // Tamanho mínimo do rosto a ser detectado (0.0 a 1.0)
+  // performanceMode: 'fast', // 'fast' ou 'accurate'
+  // landmarkMode: 'all', // 'none', 'all', 'contour'
+  // classificationMode: 'all', // 'none', 'all' (para sorrisos, olhos abertos)
+  // enableTracking: true, // Habilitar rastreamento de IDs de rosto
+  const faceDetectionOptions = useRef({
+    // Exemplo: para detectar marcos faciais e classificações
+    landmarkMode: "all",
+    classificationMode: "all",
+  }).current;
 
-  const requestPermissions = useCallback(async () => {
-    const cameraStatus = await Camera.requestCameraPermission();
-    console.log("Status da permissão da câmera:", cameraStatus); // Log para depuração
-    console.log(runOnJS);
-    setCameraPermissionStatus(cameraStatus);
+  const device = useCameraDevice("front"); // Pega a câmera frontal
+  const { detectFaces } = useFaceDetector(faceDetectionOptions);
 
-    // CORREÇÃO AQUI: Verificando se o status NÃO é "granted"
-    if (cameraStatus !== "granted") {
-      Alert.alert(
-        "Permissão da Câmera",
-        "Precisamos da sua permissão para acessar a câmera. Por favor, habilite nas configurações do aplicativo.",
-        [
-          { text: "Cancelar", style: "cancel" },
-          {
-            text: "Abrir Configurações",
-            onPress: () => Linking.openSettings(),
-          },
-        ]
-      );
-    }
-  }, []);
+  // Estado para armazenar os rostos detectados e exibi-los na UI (opcional)
+  const [detectedFaces, setDetectedFaces] = useState([]);
 
   useEffect(() => {
-    requestPermissions();
-  }, [requestPermissions]);
+    // Solicita permissão da câmera ao carregar o componente
+    (async () => {
+      const status = await Camera.requestCameraPermission();
+      console.log("Status da permissão da câmera:", status);
+      if (status !== "granted") {
+        console.error("Permissão da câmera não concedida!");
+        // Você pode adicionar uma UI para informar o usuário sobre a falta de permissão
+      }
+    })();
+  }, []); // Sem dependências para rodar apenas uma vez na montagem
 
-  let cameraDevice = null;
+  // Esta função é criada uma vez e passará para a thread de worklet.
+  // Ela será executada na thread JS principal.
+  // Usamos useCallback para garantir que ela seja estável e não cause recriações desnecessárias.
+  const handleDetectedFaces = useCallback(
+    Worklets.createRunOnJS((facesJson) => {
+      // Esta função roda na thread principal do JS.
+      // O 'facesJson' é uma string JSON que precisamos parsear de volta para um objeto.
+      try {
+        const faces = JSON.parse(facesJson);
+        console.log("Rostos detectados na thread JS:", faces);
+        setDetectedFaces(faces); // Atualiza o estado com os rostos detectados
+        // Aqui você pode adicionar lógica para desenhar retângulos, etc.
+      } catch (error) {
+        console.error("Erro ao parsear JSON dos rostos:", error);
+      }
+    }),
+    []
+  ); // A função não tem dependências externas que mudariam
 
-  if (Array.isArray(devices) && devices.length > 1) {
-    cameraDevice = devices.find((device) => device.position === "front");
-  } else if (devices && devices.front) {
-    cameraDevice = devices.front;
-  }
+  // O frameProcessor roda na thread de worklet.
+  const frameProcessor = useFrameProcessor(
+    (frame) => {
+      "worklet"; // Indica que esta é uma função worklet
 
-  // Define a função para atualizar o estado no thread da UI
-  const updateFrameInfo = useCallback((info) => {
-    setFrameInfo(info);
-  }, []);
+      // console.log("I'm running synchronously at 60 FPS!"); // Comentado para evitar spam no log
 
-  // Cria o Frame Processor
-  const frameProcessor = useFrameProcessor((frame) => {
-    "worklet";
-    console.log(`Frame: ${frame.width}x${frame.height} (${frame.pixelFormat})`);
-  }, []);
+      // Processamento pesado (detecção facial) é feito aqui, na thread de worklet.
+      const faces = detectFaces(frame);
 
-  if (cameraDevice == null) {
-    return <Text style={styles.loadingText}>Carregando câmera...</Text>;
-  }
+      // Antes de passar os rostos para a thread JS, precisamos serializá-los.
+      // Isso é crucial porque os objetos 'Face' nativos não são transferíveis diretamente.
+      const facesJson = JSON.stringify(faces);
 
-  if (cameraPermissionStatus === "denied") {
+      // Chama a função 'handleDetectedFaces' (que roda na thread JS principal)
+      // passando a string JSON dos rostos.
+      handleDetectedFaces(facesJson);
+    },
+    [handleDetectedFaces]
+  ); // Dependência: handleDetectedFaces (que é estável devido ao useCallback)
+
+  // Verifica se o dispositivo da câmera foi encontrado
+  if (!device) {
     return (
-      <View style={styles.permissionDeniedContainer}>
-        <Text style={styles.permissionDeniedText}>
-          Permissão da câmera negada.
+      <View style={styles.container}>
+        <Text style={styles.noDeviceText}>
+          Nenhum Dispositivo de Câmera Encontrado
         </Text>
-        <TouchableOpacity
-          onPress={requestPermissions}
-          style={styles.retryButton}
-        >
-          <Text style={styles.retryButtonText}>Tentar Novamente</Text>
-        </TouchableOpacity>
       </View>
     );
   }
 
-  if (cameraPermissionStatus === "not-determined") {
-    return (
-      <Text style={styles.loadingText}>Solicitando permissão da câmera...</Text>
-    );
-  }
-
+  // Renderiza a câmera se o dispositivo for encontrado
   return (
     <View style={styles.container}>
-      {/* CORREÇÃO AQUI: Usando "granted" para renderizar a câmera */}
-      {cameraPermissionStatus === "granted" && (
-        <>
-          <Camera
-            ref={cameraRef}
-            style={StyleSheet.absoluteFill}
-            device={cameraDevice}
-            isActive={true}
-            frameProcessor={frameProcessor} // Ativa o Frame Processor
-            frameProcessorFps={1} // Opcional: Define a taxa de FPS para o processador de frames (ex: 1 frame por segundo para não sobrecarregar)
-            onError={(e) => console.error("Erro da Câmera:", e)}
-          />
-        </>
+      <Camera
+        style={StyleSheet.absoluteFill} // Faz a câmera preencher toda a tela
+        device={device}
+        isActive={true} // Mantém a câmera ativa
+        frameProcessor={frameProcessor} // Ativa o processamento de frames
+        frameProcessorFps={5} // Limita o FPS do frame processor para 5 (ajuste conforme necessário)
+        // Isso pode ajudar a reduzir a carga na CPU e evitar crashes,
+        // especialmente em dispositivos mais antigos. Ajuste para sua necessidade.
+      />
+
+      {/* Exemplo de como você pode exibir os rostos detectados (opcional) */}
+      {detectedFaces.length > 0 && (
+        <View style={styles.faceOverlay}>
+          {detectedFaces.map((face, index) => (
+            <View
+              key={index}
+              style={[
+                styles.faceBox,
+                {
+                  left: face.bounds.x,
+                  top: face.bounds.y,
+                  width: face.bounds.width,
+                  height: face.bounds.height,
+                },
+              ]}
+            >
+              <Text style={styles.faceText}>Rosto {index + 1}</Text>
+              {/* Você pode adicionar mais detalhes aqui, como sorriso, olhos abertos, etc. */}
+              {face.smilingProbability && (
+                <Text style={styles.faceText}>
+                  Sorriso: {(face.smilingProbability * 100).toFixed(0)}%
+                </Text>
+              )}
+            </View>
+          ))}
+        </View>
       )}
     </View>
   );
@@ -122,49 +140,35 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "black",
-  },
-  loadingText: {
-    flex: 1,
     justifyContent: "center",
     alignItems: "center",
+  },
+  noDeviceText: {
     color: "white",
     fontSize: 18,
-    textAlign: "center",
-    marginTop: "50%",
   },
-  permissionDeniedContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "black",
-  },
-  permissionDeniedText: {
-    color: "white",
-    fontSize: 18,
-    marginBottom: 20,
-    textAlign: "center",
-  },
-  retryButton: {
-    backgroundColor: "#007AFF",
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-  },
-  retryButtonText: {
-    color: "white",
-    fontSize: 16,
-  },
-  infoOverlay: {
+  faceOverlay: {
     position: "absolute",
-    top: 50,
-    left: 20,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    padding: 10,
-    borderRadius: 5,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
   },
-  infoText: {
-    color: "white",
-    fontSize: 14,
-    marginBottom: 5,
+  faceBox: {
+    position: "absolute",
+    borderColor: "lime", // Cor da borda para o rosto
+    borderWidth: 2,
+    borderRadius: 8,
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+    padding: 4,
+  },
+  faceText: {
+    color: "lime",
+    fontSize: 12,
+    fontWeight: "bold",
+    backgroundColor: "rgba(0,0,0,0.5)",
+    paddingHorizontal: 4,
+    borderRadius: 4,
   },
 });
