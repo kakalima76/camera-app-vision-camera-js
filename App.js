@@ -1,5 +1,7 @@
 //import "react-native-reanimated";
 import { StyleSheet, Text, View } from "react-native";
+import "@/global.css";
+import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { useEffect, useState, useRef, useCallback } from "react"; // Importe useCallback
 import {
   Camera,
@@ -84,55 +86,54 @@ export default function App() {
   // Verifica se o dispositivo da câmera foi encontrado
   if (!device) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.noDeviceText}>
-          Nenhum Dispositivo de Câmera Encontrado
-        </Text>
-      </View>
+      <GluestackUIProvider mode="light"><View style={styles.container}>
+          <Text style={styles.noDeviceText}>
+            Nenhum Dispositivo de Câmera Encontrado
+          </Text>
+        </View></GluestackUIProvider>
     );
   }
 
   // Renderiza a câmera se o dispositivo for encontrado
   return (
-    <View style={styles.container}>
-      <Camera
-        style={StyleSheet.absoluteFill} // Faz a câmera preencher toda a tela
-        device={device}
-        isActive={true} // Mantém a câmera ativa
-        frameProcessor={frameProcessor} // Ativa o processamento de frames
-        frameProcessorFps={5} // Limita o FPS do frame processor para 5 (ajuste conforme necessário)
-        // Isso pode ajudar a reduzir a carga na CPU e evitar crashes,
-        // especialmente em dispositivos mais antigos. Ajuste para sua necessidade.
-      />
-
-      {/* Exemplo de como você pode exibir os rostos detectados (opcional) */}
-      {detectedFaces.length > 0 && (
-        <View style={styles.faceOverlay}>
-          {detectedFaces.map((face, index) => (
-            <View
-              key={index}
-              style={[
-                styles.faceBox,
-                {
-                  left: face.bounds.x,
-                  top: face.bounds.y,
-                  width: face.bounds.width,
-                  height: face.bounds.height,
-                },
-              ]}
-            >
-              <Text style={styles.faceText}>Rosto {index + 1}</Text>
-              {/* Você pode adicionar mais detalhes aqui, como sorriso, olhos abertos, etc. */}
-              {face.smilingProbability && (
-                <Text style={styles.faceText}>
-                  Sorriso: {(face.smilingProbability * 100).toFixed(0)}%
-                </Text>
-              )}
-            </View>
-          ))}
-        </View>
-      )}
-    </View>
+    <GluestackUIProvider mode="light"><View style={styles.container}>
+        <Camera
+          style={StyleSheet.absoluteFill} // Faz a câmera preencher toda a tela
+          device={device}
+          isActive={true} // Mantém a câmera ativa
+          frameProcessor={frameProcessor} // Ativa o processamento de frames
+          frameProcessorFps={5} // Limita o FPS do frame processor para 5 (ajuste conforme necessário)
+          // Isso pode ajudar a reduzir a carga na CPU e evitar crashes,
+          // especialmente em dispositivos mais antigos. Ajuste para sua necessidade.
+        />
+        {/* Exemplo de como você pode exibir os rostos detectados (opcional) */}
+        {detectedFaces.length > 0 && (
+          <View style={styles.faceOverlay}>
+            {detectedFaces.map((face, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.faceBox,
+                  {
+                    left: face.bounds.x,
+                    top: face.bounds.y,
+                    width: face.bounds.width,
+                    height: face.bounds.height,
+                  },
+                ]}
+              >
+                <Text style={styles.faceText}>Rosto {index + 1}</Text>
+                {/* Você pode adicionar mais detalhes aqui, como sorriso, olhos abertos, etc. */}
+                {face.smilingProbability && (
+                  <Text style={styles.faceText}>
+                    Sorriso: {(face.smilingProbability * 100).toFixed(0)}%
+                  </Text>
+                )}
+              </View>
+            ))}
+          </View>
+        )}
+      </View></GluestackUIProvider>
   );
 }
 
