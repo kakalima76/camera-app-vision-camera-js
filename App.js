@@ -1,175 +1,201 @@
-//import "react-native-reanimated";
-import { StyleSheet, Text, View } from "react-native";
+import "react-native-reanimated";
 import "@/global.css";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
-import { useEffect, useState, useRef, useCallback } from "react"; // Importe useCallback
+import {
+  View,
+  Alert,
+  StyleSheet,
+  Dimensions,
+  ImageBackground,
+} from "react-native";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   Camera,
   useCameraDevice,
   useFrameProcessor,
-  // runAsync, // runAsync não é necessário aqui
 } from "react-native-vision-camera";
 import { useFaceDetector } from "react-native-vision-camera-face-detector";
 import { Worklets } from "react-native-worklets-core";
+import { Box } from "./components/ui/box";
+import { Text } from "./components/ui/text";
+
+const { width, height } = Dimensions.get("window");
+
+const image = require("./assets/fundo3.png"); // Caminho relativo para sua imagem
+
+function estaOlhandoParaFrente(rosto) {
+  // Limites aceitáveis para os ângulos de rotação da cabeça (em graus)
+  const LIMITE_PITCH = 10; // Inclinação para cima/baixo
+  const LIMITE_ROLL = 10; // Inclinação lateral (ombro)
+  const LIMITE_YAW = 10; // Rotação esquerda/direita
+
+  // Probabilidade mínima para considerar os olhos abertos
+  const PROBABILIDADE_OLHO_ABERTO = 0.5;
+
+  // Extrai os ângulos do objeto rosto
+  const {
+    pitchAngle,
+    rollAngle,
+    yawAngle,
+    leftEyeOpenProbability,
+    rightEyeOpenProbability,
+  } = rosto;
+
+  // Verifica se os ângulos estão dentro dos limites aceitáveis
+  const angulosValidos =
+    Math.abs(pitchAngle) <= LIMITE_PITCH &&
+    Math.abs(rollAngle) <= LIMITE_ROLL &&
+    Math.abs(yawAngle) <= LIMITE_YAW;
+
+  // Verifica se ambos os olhos estão abertos (ou pelo menos não muito fechados)
+  const olhosAbertos =
+    leftEyeOpenProbability >= PROBABILIDADE_OLHO_ABERTO &&
+    rightEyeOpenProbability >= PROBABILIDADE_OLHO_ABERTO;
+
+  // console.log(
+  //   "pitchAngle",
+  //   pitchAngle,
+  //   "rollAngle",
+  //   rollAngle,
+  //   "yawAngle",
+  //   yawAngle,
+  //   "leftEyeOpenProbability",
+  //   leftEyeOpenProbability,
+  //   "rightEyeOpenProbability",
+  //   rightEyeOpenProbability
+  // );
+
+  return angulosValidos && olhosAbertos;
+}
 
 export default function App() {
-  // Opções de detecção facial. Você pode adicionar mais opções aqui, como:
-  // minFaceSize: 0.1, // Tamanho mínimo do rosto a ser detectado (0.0 a 1.0)
-  // performanceMode: 'fast', // 'fast' ou 'accurate'
-  // landmarkMode: 'all', // 'none', 'all', 'contour'
-  // classificationMode: 'all', // 'none', 'all' (para sorrisos, olhos abertos)
-  // enableTracking: true, // Habilitar rastreamento de IDs de rosto
   const faceDetectionOptions = useRef({
-    // Exemplo: para detectar marcos faciais e classificações
     landmarkMode: "all",
     classificationMode: "all",
   }).current;
 
-  const device = useCameraDevice("front"); // Pega a câmera frontal
+  const device = useCameraDevice("front");
   const { detectFaces } = useFaceDetector(faceDetectionOptions);
-
-  // Estado para armazenar os rostos detectados e exibi-los na UI (opcional)
   const [detectedFaces, setDetectedFaces] = useState([]);
+  const [hasPermission, setHasPermission] = useState(false);
+  const [isGazing, setIsGazing] = useState(false);
+  const [photo, setPhoto] = useState(false);
 
   useEffect(() => {
-    // Solicita permissão da câmera ao carregar o componente
     (async () => {
       const status = await Camera.requestCameraPermission();
       console.log("Status da permissão da câmera:", status);
+      setHasPermission(status === "granted");
       if (status !== "granted") {
-        console.error("Permissão da câmera não concedida!");
-        // Você pode adicionar uma UI para informar o usuário sobre a falta de permissão
+        Alert.alert(
+          "Permissão necessária",
+          "Por favor, permita o acesso à câmera nas configurações do dispositivo"
+        );
       }
     })();
-  }, []); // Sem dependências para rodar apenas uma vez na montagem
+  }, []);
 
-  // Esta função é criada uma vez e passará para a thread de worklet.
-  // Ela será executada na thread JS principal.
-  // Usamos useCallback para garantir que ela seja estável e não cause recriações desnecessárias.
+  useEffect(() => {
+    if (isGazing) {
+      console.log("foto tirada");
+    }
+  }, [isGazing]);
+
   const handleDetectedFaces = useCallback(
     Worklets.createRunOnJS((facesJson) => {
-      // Esta função roda na thread principal do JS.
-      // O 'facesJson' é uma string JSON que precisamos parsear de volta para um objeto.
       try {
         const faces = JSON.parse(facesJson);
-        console.log("Rostos detectados na thread JS:", faces);
-        setDetectedFaces(faces); // Atualiza o estado com os rostos detectados
-        // Aqui você pode adicionar lógica para desenhar retângulos, etc.
+        if (Array.isArray(faces) && faces.length > 0) {
+          const bool = estaOlhandoParaFrente(faces[0]);
+          setIsGazing(bool);
+          if (bool) {
+            console.log("Rostos detectados:", faces);
+          }
+        }
+
+        setDetectedFaces(faces);
       } catch (error) {
         console.error("Erro ao parsear JSON dos rostos:", error);
       }
     }),
     []
-  ); // A função não tem dependências externas que mudariam
+  );
 
-  // O frameProcessor roda na thread de worklet.
   const frameProcessor = useFrameProcessor(
     (frame) => {
-      "worklet"; // Indica que esta é uma função worklet
-
-      // console.log("I'm running synchronously at 60 FPS!"); // Comentado para evitar spam no log
-
-      // Processamento pesado (detecção facial) é feito aqui, na thread de worklet.
+      "worklet";
       const faces = detectFaces(frame);
-
-      // Antes de passar os rostos para a thread JS, precisamos serializá-los.
-      // Isso é crucial porque os objetos 'Face' nativos não são transferíveis diretamente.
       const facesJson = JSON.stringify(faces);
-
-      // Chama a função 'handleDetectedFaces' (que roda na thread JS principal)
-      // passando a string JSON dos rostos.
       handleDetectedFaces(facesJson);
     },
     [handleDetectedFaces]
-  ); // Dependência: handleDetectedFaces (que é estável devido ao useCallback)
+  );
 
-  // Verifica se o dispositivo da câmera foi encontrado
   if (!device) {
     return (
-      <GluestackUIProvider mode="light"><View style={styles.container}>
-          <Text style={styles.noDeviceText}>
-            Nenhum Dispositivo de Câmera Encontrado
+      <GluestackUIProvider mode='light'>
+        <Box className='flex-1 bg-black justify-center items-center'>
+          <Text className='text-white text-lg'>
+            Nenhuma câmera frontal encontrada
           </Text>
-        </View></GluestackUIProvider>
+        </Box>
+      </GluestackUIProvider>
     );
   }
 
-  // Renderiza a câmera se o dispositivo for encontrado
+  if (!hasPermission) {
+    return (
+      <GluestackUIProvider mode='light'>
+        <Box className='flex-1 bg-black justify-center items-center'>
+          <Text className='text-white text-lg text-center p-4'>
+            Aguardando permissão da câmera... Por favor, conceda a permissão nas
+            configurações do aplicativo.
+          </Text>
+        </Box>
+      </GluestackUIProvider>
+    );
+  }
+
+  const ovalWidth = width * 0.7;
+  const ovalHeight = ovalWidth * 1.2;
+  const ovalBorderRadius = ovalWidth / 2;
+
   return (
-    <GluestackUIProvider mode="light"><View style={styles.container}>
+    <GluestackUIProvider mode='light'>
+      <Box className='flex-1'>
         <Camera
-          style={StyleSheet.absoluteFill} // Faz a câmera preencher toda a tela
+          style={StyleSheet.absoluteFill}
           device={device}
-          isActive={true} // Mantém a câmera ativa
-          frameProcessor={frameProcessor} // Ativa o processamento de frames
-          frameProcessorFps={5} // Limita o FPS do frame processor para 5 (ajuste conforme necessário)
-          // Isso pode ajudar a reduzir a carga na CPU e evitar crashes,
-          // especialmente em dispositivos mais antigos. Ajuste para sua necessidade.
+          isActive={true}
+          frameProcessor={frameProcessor}
+          frameProcessorFps={5}
+          video={true}
+          orientation='portrait'
+          photo={photo}
         />
-        {/* Exemplo de como você pode exibir os rostos detectados (opcional) */}
-        {detectedFaces.length > 0 && (
-          <View style={styles.faceOverlay}>
-            {detectedFaces.map((face, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.faceBox,
-                  {
-                    left: face.bounds.x,
-                    top: face.bounds.y,
-                    width: face.bounds.width,
-                    height: face.bounds.height,
-                  },
-                ]}
-              >
-                <Text style={styles.faceText}>Rosto {index + 1}</Text>
-                {/* Você pode adicionar mais detalhes aqui, como sorriso, olhos abertos, etc. */}
-                {face.smilingProbability && (
-                  <Text style={styles.faceText}>
-                    Sorriso: {(face.smilingProbability * 100).toFixed(0)}%
-                  </Text>
-                )}
-              </View>
-            ))}
-          </View>
-        )}
-      </View></GluestackUIProvider>
+        {/* ImageBackground sobrepondo a câmera com um z-index maior */}
+        <ImageBackground
+          style={{
+            position: "absolute",
+            left: 0, // Margem esquerda
+            right: 0, // Margem direita
+            top: 0, // Margem superior maior
+            bottom: 0, // Margem inferior menor
+          }}
+          source={image}
+          resizeMode='cover'
+          r
+          className='absolute inset-0 z-10' // z-10 para sobrepor
+        />
+        <Box className='absolute bottom-20 w-full bg-blue-500 p-4 items-center z-20'>
+          {isGazing && (
+            <Text className='text-white text-3xl'>Olhando para a camera</Text>
+          )}
+          {!isGazing && (
+            <Text className='text-white text-3xl'>Olhe para a câmera</Text>
+          )}
+        </Box>
+      </Box>
+    </GluestackUIProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "black",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  noDeviceText: {
-    color: "white",
-    fontSize: 18,
-  },
-  faceOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-  },
-  faceBox: {
-    position: "absolute",
-    borderColor: "lime", // Cor da borda para o rosto
-    borderWidth: 2,
-    borderRadius: 8,
-    justifyContent: "flex-start",
-    alignItems: "flex-start",
-    padding: 4,
-  },
-  faceText: {
-    color: "lime",
-    fontSize: 12,
-    fontWeight: "bold",
-    backgroundColor: "rgba(0,0,0,0.5)",
-    paddingHorizontal: 4,
-    borderRadius: 4,
-  },
-});
