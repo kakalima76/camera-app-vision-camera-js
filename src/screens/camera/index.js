@@ -1,7 +1,7 @@
 import "react-native-reanimated";
 import "@/global.css";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
-import { Alert, StyleSheet, Dimensions, ImageBackground } from "react-native";
+import { Alert, StyleSheet, ImageBackground } from "react-native";
 import { useEffect, useState, useRef, useCallback } from "react";
 import {
   Camera,
@@ -12,8 +12,8 @@ import { useFaceDetector } from "react-native-vision-camera-face-detector";
 import { Worklets } from "react-native-worklets-core";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
-
-const { width, height } = Dimensions.get("window");
+import { appContext } from "@/src/context";
+import { useNavigation } from "@react-navigation/native";
 
 const image = require("../../../assets/fundo3.png"); // Caminho relativo para sua imagem
 
@@ -60,7 +60,10 @@ export default function CameraScreen() {
   const [detectedFaces, setDetectedFaces] = useState([]);
   const [hasPermission, setHasPermission] = useState(false);
   const [isGazing, setIsGazing] = useState(false);
-  const [photo, setPhoto] = useState(false);
+  const [photo, setPhoto] = useState(true);
+  const { photoPath, setPhotoPath } = appContext();
+  const camera = useRef(null);
+  const navigation = useNavigation();
 
   useEffect(() => {
     (async () => {
@@ -79,6 +82,22 @@ export default function CameraScreen() {
   useEffect(() => {
     if (isGazing) {
       console.log("foto tirada");
+
+      const _takePhoto = async function () {
+        try {
+          const photo = await camera.current.takePhoto();
+          const { path } = photo;
+          console.log(path);
+          setPhotoPath(path);
+          setIsGazing(false); // Resetar aqui
+          navigation.navigate("Photo");
+        } catch (error) {
+          console.error("Erro ao tirar foto:", error);
+          setIsGazing(false); // Resetar mesmo em caso de erro
+        }
+      };
+
+      _takePhoto();
     }
   }, [isGazing]);
 
@@ -89,9 +108,6 @@ export default function CameraScreen() {
         if (Array.isArray(faces) && faces.length > 0) {
           const bool = estaOlhandoParaFrente(faces[0]);
           setIsGazing(bool);
-          if (bool) {
-            console.log("Rostos detectados:", faces);
-          }
         }
 
         setDetectedFaces(faces);
@@ -137,10 +153,6 @@ export default function CameraScreen() {
     );
   }
 
-  const ovalWidth = width * 0.7;
-  const ovalHeight = ovalWidth * 1.2;
-  const ovalBorderRadius = ovalWidth / 2;
-
   return (
     <GluestackUIProvider mode='light'>
       <Box className='flex-1'>
@@ -153,7 +165,9 @@ export default function CameraScreen() {
           video={true}
           orientation='portrait'
           photo={photo}
+          ref={camera}
         />
+
         {/* ImageBackground sobrepondo a câmera com um z-index maior */}
         <ImageBackground
           style={{
