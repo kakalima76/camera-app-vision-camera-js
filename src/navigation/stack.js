@@ -5,8 +5,9 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import CameraScreen from "@/src/screens/camera";
-import AvisoScreen from "./src/screens/aviso";
-import PhotoScreen from "./src/screens/foto";
+import AvisoScreen from "../screens/aviso";
+import PhotoScreen from "../screens/foto";
+import LoginScreen from "../screens/login";
 
 // Importe suas telas
 
@@ -24,13 +25,20 @@ function AppStack() {
         Stack.Navigator define a estrutura da sua pilha de navegação.
         initialRouteName="Home" define a tela inicial quando o aplicativo é carregado.
       */}
-      <Stack.Navigator initialRouteName='Aviso'>
+      <Stack.Navigator initialRouteName='Login'>
         {/*
           Stack.Screen define cada tela na pilha.
           'name' é o identificador único para navegar para esta tela.
           'component' é o componente React a ser renderizado.
           'options' permite customizar o cabeçalho e outras configurações da tela.
         */}
+
+        <Stack.Screen
+          name='Login'
+          component={LoginScreen}
+          options={{ headerShown: false }} // Título do cabeçalho para a tela inicial
+        />
+
         <Stack.Screen
           name='Camera'
           component={CameraScreen}

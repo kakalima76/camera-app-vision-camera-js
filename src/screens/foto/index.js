@@ -6,6 +6,7 @@ import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text"; // Não usado, pode ser removido se não for necessário
 import { Button, ButtonText } from "@/components/ui/button"; // Não usado, pode ser removido se não for necessário
 import { Image } from "@/components/ui/image";
+import { VStack } from "@/components/ui/vstack";
 import { useNavigation } from "@react-navigation/native";
 import { appContext } from "@/src/context";
 import { useEffect } from "react";
@@ -14,7 +15,7 @@ import { useEffect } from "react";
 
 export default function PhotoScreen() {
   const navigation = useNavigation();
-  const { photoPath } = appContext();
+  const { photoPath, serverPhotoPath } = appContext();
 
   useEffect(() => {
     console.log("Caminho da foto:", photoPath);
@@ -23,27 +24,43 @@ export default function PhotoScreen() {
   return (
     <GluestackUIProvider mode='light'>
       {/* O Box com flex-1 já garante que ele ocupe todo o espaço disponível */}
-      <Box className='flex-1 justify-center items-center'>
+      <VStack className='flex-1 justify-center items-center gap-y-3.5'>
         {/* Adicionado justify-center e items-center para centralizar */}
         {!!photoPath ? ( // Usando operador ternário para renderização condicional
-          <Image
-            // Classes NativeWind para ocupar 100% da largura e altura do seu contêiner pai (o Box)
-            className='w-full h-full'
-            source={{
-              uri: `file://${photoPath}`, // Mantido o prefixo 'file://' conforme discutido
-            }}
-            alt='Imagem capturada' // Melhor descrição para alt
-            resizeMode='contain' // Ou 'cover', dependendo de como você quer que a imagem se ajuste
-            onError={(e) => {
-              console.log("Erro ao carregar imagem:", e.nativeEvent.error);
-              console.log("URI tentada:", `file://${photoPath}`);
-            }}
-          />
+          <>
+            <Image
+              // Classes NativeWind para ocupar 100% da largura e altura do seu contêiner pai (o Box)
+              className='w-60 h-96'
+              source={{
+                uri: `file://${photoPath}`, // Mantido o prefixo 'file://' conforme discutido
+              }}
+              alt='Imagem capturada' // Melhor descrição para alt
+              resizeMode='contain' // Ou 'cover', dependendo de como você quer que a imagem se ajuste
+              onError={(e) => {
+                console.log("Erro ao carregar imagem:", e.nativeEvent.error);
+                console.log("URI tentada:", `file://${photoPath}`);
+              }}
+            />
+
+            <Image
+              // Classes NativeWind para ocupar 100% da largura e altura do seu contêiner pai (o Box)
+              className='w-60 h-96'
+              source={{
+                uri: `file://${serverPhotoPath}`, // Mantido o prefixo 'file://' conforme discutido
+              }}
+              alt='Imagem capturada' // Melhor descrição para alt
+              resizeMode='contain' // Ou 'cover', dependendo de como você quer que a imagem se ajuste
+              onError={(e) => {
+                console.log("Erro ao carregar imagem:", e.nativeEvent.error);
+                console.log("URI tentada:", `file://${photoPath}`);
+              }}
+            />
+          </>
         ) : (
           // Mensagem opcional enquanto a imagem não está disponível
           <Text className='text-lg text-gray-500'>Carregando imagem...</Text>
         )}
-      </Box>
+      </VStack>
     </GluestackUIProvider>
   );
 }

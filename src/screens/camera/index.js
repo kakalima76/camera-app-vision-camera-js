@@ -24,7 +24,7 @@ function estaOlhandoParaFrente(rosto) {
   const LIMITE_YAW = 10; // Rotação esquerda/direita
 
   // Probabilidade mínima para considerar os olhos abertos
-  const PROBABILIDADE_OLHO_ABERTO = 0.5;
+  const PROBABILIDADE_OLHO_ABERTO = 0.9;
 
   // Extrai os ângulos do objeto rosto
   const {
@@ -68,7 +68,6 @@ export default function CameraScreen() {
   useEffect(() => {
     (async () => {
       const status = await Camera.requestCameraPermission();
-      console.log("Status da permissão da câmera:", status);
       setHasPermission(status === "granted");
       if (status !== "granted") {
         Alert.alert(
@@ -81,19 +80,17 @@ export default function CameraScreen() {
 
   useEffect(() => {
     if (isGazing) {
-      console.log("foto tirada");
-
       const _takePhoto = async function () {
         try {
           const photo = await camera.current.takePhoto();
+          setPhoto(false);
           const { path } = photo;
-          console.log(path);
           setPhotoPath(path);
-          setIsGazing(false); // Resetar aqui
+          setIsGazing(false);
           navigation.navigate("Photo");
         } catch (error) {
-          console.error("Erro ao tirar foto:", error);
           setIsGazing(false); // Resetar mesmo em caso de erro
+          setPhoto(false);
         }
       };
 
@@ -107,6 +104,7 @@ export default function CameraScreen() {
         const faces = JSON.parse(facesJson);
         if (Array.isArray(faces) && faces.length > 0) {
           const bool = estaOlhandoParaFrente(faces[0]);
+          console.log(faces);
           setIsGazing(bool);
         }
 
@@ -159,13 +157,13 @@ export default function CameraScreen() {
         <Camera
           style={StyleSheet.absoluteFill}
           device={device}
-          isActive={true}
+          isActive={photo}
           frameProcessor={frameProcessor}
           frameProcessorFps={5}
-          video={true}
           orientation='portrait'
           photo={photo}
           ref={camera}
+          zoom={device.maxZoom}
         />
 
         {/* ImageBackground sobrepondo a câmera com um z-index maior */}

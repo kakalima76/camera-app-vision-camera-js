@@ -12,12 +12,15 @@ const AppContext = createContext({});
  * Ele gerencia o estado que será compartilhado.
  */
 export const AppProvider = ({ children }) => {
-  const [photoPath, setPhotoPath] = useState(null); // Estado simples: um contador
+  const [photoPath, setPhotoPath] = useState(null); // Caminho da foto tirada pela camedra do app
+  const [serverPhotoPath, setServerPhotoPath] = useState(null); // Caminho da foto usada no passaport
 
   // O valor que será disponibilizado para os componentes filhos
   const AppContextValue = {
     photoPath,
     setPhotoPath,
+    serverPhotoPath,
+    setServerPhotoPath,
   };
 
   return (

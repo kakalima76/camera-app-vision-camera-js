@@ -1,7 +1,8 @@
 import "react-native-reanimated";
 import "@/global.css";
+import { useEffect } from "react";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
-import { ImageBackground } from "react-native";
+import { ImageBackground, BackHandler, Alert } from "react-native";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
 import { Button, ButtonText } from "@/components/ui/button";
@@ -11,6 +12,41 @@ const image = require("../../../assets/avatar.png"); // Caminho relativo para su
 
 export default function AvisoScreen() {
   const navigation = useNavigation();
+
+  useEffect(() => {
+    const onBackPress = () => {
+      Alert.alert(
+        "Aviso",
+        "Não é possivel retornar para a tela de login, deseja fazer o logout?.",
+        [
+          {
+            text: "Sim",
+            onPress: () => {
+              navigation.navigate("Login");
+            },
+            style: "default",
+          },
+          {
+            text: "Não",
+            onPress: () => {
+              // Do nothing
+            },
+            style: "default",
+          },
+        ],
+        { cancelable: false }
+      );
+
+      return true;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      onBackPress
+    );
+
+    return () => backHandler.remove();
+  }, [navigation]);
 
   return (
     <GluestackUIProvider mode='light'>
@@ -26,7 +62,6 @@ export default function AvisoScreen() {
           }}
           source={image}
           resizeMode='cover'
-          r
           className='absolute inset-0 z-10' // z-10 para sobrepor
         />
         <Box className='flex  absolute bottom-20 w-full bg-blue-500 p-4 items-center z-20'>
