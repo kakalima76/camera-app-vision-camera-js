@@ -48,8 +48,6 @@ export default function LoginScreen() {
       .toString()
       .padStart(6, "0")}.jpg`;
 
-    console.log(imageUrl);
-
     try {
       const res = await RNFetchBlob.config({
         fileCache: true, // Cacheia o arquivo localmente
@@ -67,7 +65,7 @@ export default function LoginScreen() {
 
       if (!!imagePath) {
         setServerPhotoPath(imagePath);
-        navigation.navigate("Aviso");
+        navigation.navigate("Luz");
       }
     } catch (error) {
       setError(error);

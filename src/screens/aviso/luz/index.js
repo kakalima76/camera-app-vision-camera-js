@@ -8,9 +8,9 @@ import { Text } from "@/components/ui/text";
 import { Button, ButtonText } from "@/components/ui/button";
 import { useNavigation } from "@react-navigation/native";
 
-const image = require("../../../assets/avatar.png"); // Caminho relativo para sua imagem
+const image = require("@/assets/iluminacao.jpg"); // Caminho relativo para sua imagem
 
-export default function AvisoScreen() {
+export default function LuzScreen() {
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -64,18 +64,22 @@ export default function AvisoScreen() {
           resizeMode='cover'
           className='absolute inset-0 z-10' // z-10 para sobrepor
         />
-        <Box className='flex  absolute bottom-20 w-full bg-blue-500 p-4 items-center z-20'>
-          <Text className='text-3xl text-white  text-center mb-4'>
-            Remova óculos e bonés para para tirar a foto
+        <Box className='flex  absolute bottom-16 h-1/4 w-full bg-blue-500 p-4 items-center z-20'>
+          <Text className='text-xl text-white  text-center mb-4'>
+            Procure um lugar com iluminação acima da cabeça. Evite locais com
+            luzes refletindo diretamente na tela do aparelho.
           </Text>
-          <Button
-            className='w-24 h-24 rounded-full bg-blue-100'
-            onPress={() => {
-              navigation.navigate("Camera");
-            }}
-          >
-            <ButtonText className='text-3xl text-blue-950'>OK</ButtonText>
-          </Button>
+
+          <Box className='flex  absolute bottom-14 h-1/4 w-full bg-blue-500 p-4 items-center z-20'>
+            <Button
+              className='w-20 h-20 rounded-full bg-blue-100'
+              onPress={() => {
+                navigation.navigate("Aviso");
+              }}
+            >
+              <ButtonText className='text-2xl text-blue-950'>OK</ButtonText>
+            </Button>
+          </Box>
         </Box>
       </Box>
     </GluestackUIProvider>

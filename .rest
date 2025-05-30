@@ -1,0 +1,17 @@
+######
+POST http://10.2.214.13:6000/upload
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="imagem1"; filename="imagem1.jpg"
+Content-Type: image/jpeg
+
+< ./assets/eu.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="imagem2"; filename="imagem2.jpg"
+Content-Type: image/jpeg
+
+< ./assets/foto.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+# GET http://10.2.214.13:6000/ HTTP/1.1

@@ -5,9 +5,12 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import CameraScreen from "@/src/screens/camera";
-import AvisoScreen from "../screens/aviso";
+import AvisoScreen from "../screens/aviso/oculos";
 import PhotoScreen from "../screens/foto";
 import LoginScreen from "../screens/login";
+import LuzScreen from "../screens/aviso/luz";
+import SucessoScreen from "../screens/respostas/sucesso";
+import InsucessoScreen from "../screens/respostas/insucesso";
 
 // Importe suas telas
 
@@ -46,6 +49,12 @@ function AppStack() {
         />
 
         <Stack.Screen
+          name='Luz'
+          component={LuzScreen}
+          options={{ headerShown: false }} // Título do cabeçalho para a tela inicial
+        />
+
+        <Stack.Screen
           name='Aviso'
           component={AvisoScreen}
           options={{ headerShown: false }} // Título do cabeçalho para a tela inicial
@@ -54,6 +63,18 @@ function AppStack() {
         <Stack.Screen
           name='Photo'
           component={PhotoScreen}
+          options={{ headerShown: false }} // Título do cabeçalho para a tela inicial
+        />
+
+        <Stack.Screen
+          name='Sucesso'
+          component={SucessoScreen}
+          options={{ headerShown: false }} // Título do cabeçalho para a tela inicial
+        />
+
+        <Stack.Screen
+          name='Insucesso'
+          component={InsucessoScreen}
           options={{ headerShown: false }} // Título do cabeçalho para a tela inicial
         />
       </Stack.Navigator>

@@ -12,6 +12,7 @@ import { useFaceDetector } from "react-native-vision-camera-face-detector";
 import { Worklets } from "react-native-worklets-core";
 import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
+import { Button, ButtonText } from "@/components/ui/button";
 import { appContext } from "@/src/context";
 import { useNavigation } from "@react-navigation/native";
 
@@ -24,7 +25,7 @@ function estaOlhandoParaFrente(rosto) {
   const LIMITE_YAW = 10; // Rotação esquerda/direita
 
   // Probabilidade mínima para considerar os olhos abertos
-  const PROBABILIDADE_OLHO_ABERTO = 0.9;
+  const PROBABILIDADE_OLHO_ABERTO = 0.95;
 
   // Extrai os ângulos do objeto rosto
   const {
@@ -98,13 +99,26 @@ export default function CameraScreen() {
     }
   }, [isGazing]);
 
+  const handleTakePhoto = async () => {
+    try {
+      const photo = await camera.current.takePhoto();
+      setPhoto(false);
+      const { path } = photo;
+      setPhotoPath(path);
+      setIsGazing(false);
+      navigation.navigate("Photo");
+    } catch (error) {
+      setIsGazing(false); // Resetar mesmo em caso de erro
+      setPhoto(false);
+    }
+  };
+
   const handleDetectedFaces = useCallback(
     Worklets.createRunOnJS((facesJson) => {
       try {
         const faces = JSON.parse(facesJson);
         if (Array.isArray(faces) && faces.length > 0) {
           const bool = estaOlhandoParaFrente(faces[0]);
-          console.log(faces);
           setIsGazing(bool);
         }
 
@@ -187,6 +201,12 @@ export default function CameraScreen() {
           {!isGazing && (
             <Text className='text-white text-3xl'>Olhe para a câmera</Text>
           )}
+          <Button
+            className='w-72 h-16 rounded-full bg-blue-100 self-center' // self-center para centralizar o botão dentro do VStack
+            onPress={async () => await handleTakePhoto()}
+          >
+            <ButtonText className='text-3xl text-blue-950'>acessar</ButtonText>
+          </Button>
         </Box>
       </Box>
     </GluestackUIProvider>
