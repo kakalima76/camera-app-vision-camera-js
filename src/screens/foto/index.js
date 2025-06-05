@@ -20,7 +20,8 @@ import RNFetchBlob from "rn-fetch-blob";
  * @throws {Error} Lança um erro se a requisição falhar ou o servidor retornar um erro.
  */
 async function uploadAndCompareFacesAndroid(imagePath1, imagePath2) {
-  const URL_UPLOAD = "http://10.2.214.13:6000/upload"; // Seu URL de upload FastAPI
+  const URL_UPLOAD =
+    "https://comlurbdev.rio.rj.gov.br/extranet/ws/app_comlurb/teste.php"; // Seu URL de upload FastAPI
 
   // Garante que o caminho do arquivo tenha o prefixo 'file://'
   // Muitos seletores de imagem já retornam 'file://', mas é bom garantir.

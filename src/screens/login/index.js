@@ -21,19 +21,16 @@ export default function LoginScreen() {
 
   const downloadImage = async () => {
     if (!matricula) {
-      console.log("deu ruim");
       return;
     }
 
     let _primerioCaracter = matricula.toString().substring(0, 1);
-    console.log(_primerioCaracter);
 
     let _matricula;
 
     //Uso estes testes para saber que tipo de prefixo por em cada foto, para busca-las no servidor adequadamente!
     if (matricula.toString().length <= 6) {
       _matricula = "014" + matricula.toString().padStart(6, "0");
-      console.log("_matricula", _matricula);
     }
 
     if (_primerioCaracter === "8" && matricula.toString().length >= 6) {
@@ -50,7 +47,7 @@ export default function LoginScreen() {
 
     try {
       const res = await RNFetchBlob.config({
-        fileCache: true, // Cacheia o arquivo localmente
+        fileCache: false, // Cacheia o arquivo localmente
         appendExt: "jpg", // Adiciona a extensão .jpg ao arquivo
       }).fetch("GET", imageUrl);
 
@@ -66,9 +63,12 @@ export default function LoginScreen() {
       if (!!imagePath) {
         setServerPhotoPath(imagePath);
         navigation.navigate("Luz");
+      } else {
+        navigation.navigate("ErrorPhoto");
       }
     } catch (error) {
       setError(error);
+      navigation.navigate("ErrorPhoto");
     }
   };
 
