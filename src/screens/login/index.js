@@ -41,18 +41,23 @@ export default function LoginScreen() {
       _matricula = matricula.toString().padStart(6, "0"); // Alguns casos não estão nos padrões das matriculas que usamos, sendo assim vai entrar dessa maneira na pasta de imagem, apenas a matricula
     }
 
-    const imageUrl = `https://comlurbnet.rio.rj.gov.br/extranet/FOTOS/empregados/${_matricula
+    const imageUrl = `https://comlurbdev.rio.rj.gov.br/extranet/Fotos/fotoRecoginizer/downlaod.php?file=${_matricula
       .toString()
       .padStart(6, "0")}.jpg`;
 
+    console.log(imageUrl);
+
     try {
       const res = await RNFetchBlob.config({
-        fileCache: false, // Cacheia o arquivo localmente
+        fileCache: true, // Cacheia o arquivo localmente
         appendExt: "jpg", // Adiciona a extensão .jpg ao arquivo
       }).fetch("GET", imageUrl);
 
+      console.log(res);
+
       // O caminho local do arquivo baixado
       const imagePath = res.path();
+      console.log(imagePath);
 
       // Você pode retornar o caminho local do arquivo ou base64, dependendo de como você quer usar a imagem
       // Por exemplo, para usar em um componente Image: { uri: 'file://' + imagePath }

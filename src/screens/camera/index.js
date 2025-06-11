@@ -103,8 +103,8 @@ export default function CameraScreen() {
     try {
       const photo = await camera.current.takePhoto();
       setPhoto(false);
-      // const { path } = photo;
-      // setPhotoPath(path);
+      const { path } = photo;
+      setPhotoPath(path);
       setIsGazing(false);
       navigation.navigate("Photo");
     } catch (error) {

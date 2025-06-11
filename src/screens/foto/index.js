@@ -123,6 +123,7 @@ import ImagePicker from 'react-native-image-picker';
 */
 
 export default function PhotoScreen() {
+  console.log(serverPhotoPath);
   const navigation = useNavigation();
   const { photoPath, serverPhotoPath } = appContext();
 
@@ -140,7 +141,7 @@ export default function PhotoScreen() {
       }
     };
 
-    response();
+    //response();
   }, [photoPath]); // Adicionado photoPath como dependência para ver mudanças
 
   return (
@@ -154,7 +155,7 @@ export default function PhotoScreen() {
               // Classes NativeWind para ocupar 100% da largura e altura do seu contêiner pai (o Box)
               className='w-60 h-96'
               source={{
-                uri: `file://${photoPath}`, // Mantido o prefixo 'file://' conforme discutido
+                uri: `file://${photoPath}`,
               }}
               alt='Imagem capturada' // Melhor descrição para alt
               resizeMode='contain' // Ou 'cover', dependendo de como você quer que a imagem se ajuste
