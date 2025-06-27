@@ -13,41 +13,6 @@ const image = require("@/assets/avatar.png"); // Caminho relativo para sua image
 export default function AvisoScreen() {
   const navigation = useNavigation();
 
-  useEffect(() => {
-    const onBackPress = () => {
-      Alert.alert(
-        "Aviso",
-        "Não é possivel retornar para a tela anterior, deseja fazer o logout?.",
-        [
-          {
-            text: "Sim",
-            onPress: () => {
-              navigation.navigate("Login");
-            },
-            style: "default",
-          },
-          {
-            text: "Não",
-            onPress: () => {
-              // Do nothing
-            },
-            style: "default",
-          },
-        ],
-        { cancelable: false }
-      );
-
-      return true;
-    };
-
-    const backHandler = BackHandler.addEventListener(
-      "hardwareBackPress",
-      onBackPress
-    );
-
-    return () => backHandler.remove();
-  }, [navigation]);
-
   return (
     <GluestackUIProvider mode='light'>
       <Box className='flex-1'>

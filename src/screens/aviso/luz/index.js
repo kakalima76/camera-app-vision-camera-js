@@ -17,12 +17,12 @@ export default function LuzScreen() {
     const onBackPress = () => {
       Alert.alert(
         "Aviso",
-        "Não é possivel retornar para a tela de login, deseja fazer o logout?.",
+        "Não é possivel retornar para a tela anterior. Deseja reinicar o processo?.",
         [
           {
             text: "Sim",
             onPress: () => {
-              navigation.navigate("Login");
+              navigation.navigate("Luz");
             },
             style: "default",
           },

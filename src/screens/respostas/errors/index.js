@@ -37,7 +37,7 @@ export default function ErrorPhotoScreen() {
         <Button
           className='w-32 h-32 rounded-full mt-10 bg-red-400'
           onPress={() => {
-            navigation.navigate("Login");
+            navigation.navigate("Luz");
           }}
         >
           <ButtonText>Tela Inicial</ButtonText>
