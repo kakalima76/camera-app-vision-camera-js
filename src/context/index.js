@@ -20,6 +20,17 @@ export const AppProvider = ({ children }) => {
   const [genero, setGenero] = useState(null);
 
   /**
+   * Reseta todos o estado para o valor default
+   */
+  function resetaTudo() {
+    setPhotoPath(null);
+    setServerPhotoPath(null);
+    setArquivos([]);
+    setIdade(0);
+    setGenero(null);
+  }
+
+  /**
    * Limpa um arquivo temporário de imagem específico do diretório de cache do sistema.
    * Ideal para ser chamado após o uso de uma foto capturada pela câmera
    * para liberar espaço de armazenamento imediatamente.
@@ -74,6 +85,7 @@ export const AppProvider = ({ children }) => {
     apagarCacheTemporario,
     genero,
     setGenero,
+    resetaTudo,
   };
 
   return (

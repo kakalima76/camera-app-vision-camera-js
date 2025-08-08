@@ -1,5 +1,5 @@
 {
-  "name": "camera-app-vision-camera-js",
+  "name": "face-detect",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {

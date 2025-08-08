@@ -7,6 +7,7 @@ import { Box } from "@/components/ui/box";
 import { Text } from "@/components/ui/text";
 import { Button, ButtonText } from "@/components/ui/button";
 import { useNavigation } from "@react-navigation/native";
+import { appContext } from "@/src/context";
 
 const image = require("@/assets/iluminacao.jpg"); // Caminho relativo para sua imagem
 

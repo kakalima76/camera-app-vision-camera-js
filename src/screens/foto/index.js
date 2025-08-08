@@ -150,8 +150,8 @@ const baixarESalvarFotoAndroid = async (foto_name) => {
     // Usamos o 'downloadedUri' como entrada para o ImageResizer
     const { uri: resizedUri } = await ImageResizer.createResizedImage(
       downloadedUri, // URI da imagem baixada
-      800, // Largura máxima
-      800, // Altura máxima
+      224, // Largura máxima
+      224, // Altura máxima
       "JPEG", // Formato da imagem de saída
       80, // Qualidade (0-100)
       0, // Rotação
@@ -402,12 +402,16 @@ export default function PhotoScreen() {
       await listServerImages();
     };
 
-    exec();
+    if (!concluido) {
+      exec();
+    }
   }, []);
 
   const handleConcluir = async () => {
-    await apagarCacheTemporario(photoPath);
-    await apagarCacheTemporario(urlImagemTemp);
+    if (!!photoPath && !!urlImagemTemp) {
+      await apagarCacheTemporario(photoPath);
+      await apagarCacheTemporario(urlImagemTemp);
+    }
     navigation.navigate("Luz");
   };
 
@@ -458,12 +462,14 @@ export default function PhotoScreen() {
           )}
         </Center>
 
-        <Button
-          className='w-20 h-20 rounded-full bg-blue-100 mt-1'
-          onPress={handleConcluir}
-        >
-          <ButtonText className='text-2xl text-blue-950'>OK</ButtonText>
-        </Button>
+        {concluido && (
+          <Button
+            className='w-20 h-20 rounded-full bg-blue-100 mt-1'
+            onPress={handleConcluir}
+          >
+            <ButtonText className='text-2xl text-blue-950'>OK</ButtonText>
+          </Button>
+        )}
       </VStack>
     </GluestackUIProvider>
   );
