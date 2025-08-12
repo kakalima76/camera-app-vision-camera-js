@@ -11,6 +11,7 @@ import LuzScreen from "../screens/aviso/luz";
 import SucessoScreen from "../screens/respostas/sucesso";
 import InsucessoScreen from "../screens/respostas/insucesso";
 import ErrorPhotoScreen from "../screens/respostas/errors";
+import OpcoesScreen from "../screens/opcoes";
 
 // Importe suas telas
 
@@ -35,6 +36,12 @@ function AppStack() {
           'component' é o componente React a ser renderizado.
           'options' permite customizar o cabeçalho e outras configurações da tela.
         */}
+
+        <Stack.Screen
+          name='Opcoes'
+          component={OpcoesScreen}
+          options={{ headerShown: false }} // Título do cabeçalho para a tela inicial
+        />
 
         <Stack.Screen
           name='Camera'

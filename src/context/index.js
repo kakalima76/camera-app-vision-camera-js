@@ -1,6 +1,34 @@
 // src/context/AppContext.js (Nome do arquivo sugerido)
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useState, useContext, useEffect } from "react";
 import FileSystem from "react-native-fs";
+import useCurrentLocation from "../hooks/location";
+
+import RNFetchBlob from "rn-fetch-blob";
+
+/**
+ * Consulta o endpoint de distâncias da câmera do dispositivo aos colaboradores mais próximos,
+ * passando latitude e longitude.
+ *
+ * @param {number} latitude - Latitude da localização.
+ * @param {number} longitude - Longitude da localização.
+ * @returns {Promise<Object>} Objeto JSON com a resposta da API.
+ * @throws {Error} Lança erro se a requisição falhar.
+ */
+async function consultarDistancias(latitude, longitude) {
+  try {
+    const url = `https://comlurbdev.rio.rj.gov.br/extranet/Fotos/fotoRecoginizer/distancias.php?lat=${latitude}&lng=${longitude}`;
+    // console.log(url); // Removido para evitar poluição no log
+    const response = await RNFetchBlob.config({
+      trusty: true, // caso precise ignorar erros de certificado SSL
+    }).fetch("GET", url);
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Erro ao consultar distâncias:", error);
+    throw error;
+  }
+}
 
 // 1. Crie o Contexto
 // O valor padrão (aqui, um objeto vazio) é usado quando um componente
@@ -8,26 +36,32 @@ import FileSystem from "react-native-fs";
 const AppContext = createContext({});
 
 /**
- * 2. Crie um Componente Provedor (Provider)
- * Este componente envolverá os componentes que precisam acessar o contexto.
- * Ele gerencia o estado que será compartilhado.
+ * Componente Provedor que gerencia estados globais e compartilha via Context API.
+ * @param {object} props
+ * @param {React.ReactNode} props.children - Componentes filhos que terão acesso ao contexto.
+ * @returns {JSX.Element} O provedor de contexto que envolve os componentes filhos.
  */
 export const AppProvider = ({ children }) => {
-  const [photoPath, setPhotoPath] = useState(null); // Caminho da foto tirada pela camedra do app
+  const [photoPath, setPhotoPath] = useState(null); // Caminho da foto tirada pela câmera do app
   const [serverPhotoPath, setServerPhotoPath] = useState(null); // Caminho da foto usada no passaport
-  const [arquivos, setArquivos] = useState([]); //Nome das imagens do diretório de fotos
-  const [idade, setIdade] = useState(0); //guarda o valor da idade presumida do usuário
-  const [genero, setGenero] = useState(null);
+  const [arquivos, setArquivos] = useState([]); // Nome das imagens do diretório de fotos
+
+  const { location, errorMsg, loading } = useCurrentLocation();
+
+  // Removidos console.log para loading e errorMsg para evitar spam no console
+
+  useEffect(() => {
+    // Se quiser ativar logs para depuração, descomente:
+    // if (location) console.log("Location atualizada:", location);
+  }, [location]);
 
   /**
-   * Reseta todos o estado para o valor default
+   * Reseta todos os estados para seus valores padrão.
    */
   function resetaTudo() {
     setPhotoPath(null);
     setServerPhotoPath(null);
     setArquivos([]);
-    setIdade(0);
-    setGenero(null);
   }
 
   /**
@@ -36,20 +70,9 @@ export const AppProvider = ({ children }) => {
    * para liberar espaço de armazenamento imediatamente.
    *
    * @async
-   * @function cleanSpecificTempPhoto
    * @param {string} filePath - O caminho completo do arquivo temporário a ser excluído.
-   * @returns {Promise<void>} Uma Promise que resolve quando a exclusão é concluída.
+   * @returns {Promise<void>} Promise que resolve quando a exclusão for concluída.
    * @throws {Error} Se o caminho do arquivo for inválido ou se houver falha na exclusão.
-   *
-   * @example
-   * // Supondo que 'photoUri' seja o caminho retornado por camera.takePhoto().path
-   * const photoUri = "/data/user/0/com.your_app/cache/some_temp_photo.jpg";
-   * try {
-   * await cleanSpecificTempPhoto(photoUri);
-   * console.log("Foto temporária excluída com sucesso.");
-   * } catch (error) {
-   * console.error("Falha ao excluir foto temporária:", error);
-   * }
    */
   async function apagarCacheTemporario(filePath) {
     if (!filePath || typeof filePath !== "string") {
@@ -60,7 +83,7 @@ export const AppProvider = ({ children }) => {
       const fileExists = await FileSystem.exists(filePath);
       if (fileExists) {
         await FileSystem.unlink(filePath);
-        console.log(`Arquivo temporário excluído: ${filePath}`);
+        // console.log(`Arquivo temporário excluído: ${filePath}`); // Removido para reduzir verbosidade
       } else {
         console.warn(
           `Arquivo temporário não encontrado no caminho: ${filePath}`
@@ -72,7 +95,7 @@ export const AppProvider = ({ children }) => {
     }
   }
 
-  // O valor que será disponibilizado para os componentes filhos
+  // Valor que será disponibilizado para os componentes filhos
   const AppContextValue = {
     photoPath,
     setPhotoPath,
@@ -80,12 +103,10 @@ export const AppProvider = ({ children }) => {
     setServerPhotoPath,
     arquivos,
     setArquivos,
-    idade,
-    setIdade,
     apagarCacheTemporario,
-    genero,
-    setGenero,
     resetaTudo,
+    consultarDistancias,
+    location,
   };
 
   return (
@@ -96,13 +117,16 @@ export const AppProvider = ({ children }) => {
 };
 
 /**
- * 3. Crie um Hook Personalizado para Consumir o Contexto (Recomendado)
- * Este hook facilita o consumo do contexto em qualquer componente funcional.
+ * Hook personalizado para consumir o contexto da aplicação.
+ * Deve ser usado somente dentro do AppProvider.
+ *
+ * @throws {Error} Se usado fora do AppProvider.
+ * @returns {object} Objeto do contexto da aplicação com estados e funções.
  */
 export const appContext = () => {
   const context = useContext(AppContext);
   if (context === undefined) {
-    throw new Error("useCount deve ser usado dentro de um AppProvider");
+    throw new Error("appContext deve ser usado dentro de um AppProvider");
   }
   return context;
 };
